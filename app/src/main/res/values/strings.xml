@@ -4,4 +4,5 @@
     <string name="ok">OK</string>
     <string name="enter_new_search_text">Enter new search text</string>
     <string name="exit">Go Back</string>
+    <string name="try_again">Try Again</string>
 </resources>

@@ -16,6 +16,7 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 
+import com.faizal.flickrimagesearch.common.Common;
 import com.faizal.flickrimagesearch.listeners.OnLoadMoreListener;
 import com.faizal.flickrimagesearch.models.FlickerImageModel;
 import com.faizal.flickrimagesearch.R;
@@ -170,21 +171,28 @@ public class HomeGridAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
         }
 
         protected Bitmap doInBackground(String... urls) {
-            urldisplay = urls[0];
-            Bitmap bmp = null;
             try {
-                InputStream in = new java.net.URL(urldisplay).openStream();
-                bmp = BitmapFactory.decodeStream(in);
+                urldisplay = urls[0];
+                Bitmap bmp = null;
+                try {
+                    InputStream in = new java.net.URL(urldisplay).openStream();
+                    bmp = BitmapFactory.decodeStream(in);
+                } catch (Exception e) {
+                    Log.e("Error", e.getMessage());
+                    e.printStackTrace();
+                }
+                return bmp;
             } catch (Exception e) {
-                Log.e("Error", e.getMessage());
                 e.printStackTrace();
+                return null;
             }
-            return bmp;
         }
 
         protected void onPostExecute(Bitmap result) {
-            bmImage.setImageBitmap(result);
-            addBitmapToMemoryCache(urldisplay, result);
+            if (result != null) {
+                bmImage.setImageBitmap(result);
+                addBitmapToMemoryCache(urldisplay, result);
+            }
         }
     }
 
@@ -209,27 +217,11 @@ public class HomeGridAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
             mImageView.setImageResource(R.drawable.placeholder);
 //            BitmapWorkerTask task = new BitmapWorkerTask(mImageView);
 //            task.execute(resId);
-            new DownloadImageTask(mImageView).execute(resId);
-
-
+            Common common = new Common(context);
+            if (common.isNetworkConnected()) {
+                new DownloadImageTask(mImageView).execute(resId);
+            }
         }
     }
 
-
-    /*class BitmapWorkerTask extends AsyncTask<Integer, Void, Bitmap> {
-        ImageView mImageView;
-
-        public BitmapWorkerTask(ImageView mImageView) {
-            this.mImageView = mImageView;
-        }
-
-        // Decode image in background.
-        @Override
-        protected Bitmap doInBackground(Integer... params) {
-            final Bitmap bitmap = decodeSampledBitmapFromResource(
-                    getResources(), params[0], 100, 100));
-            addBitmapToMemoryCache(String.valueOf(params[0]), bitmap);
-            return bitmap;
-        }
-    }*/
 }

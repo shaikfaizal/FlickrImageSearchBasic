@@ -36,7 +36,7 @@ public class HomeActivity extends AppCompatActivity implements ResponseListener,
 
     RecyclerView recyclerView;
     HomeGridAdapter adapter;
-    RelativeLayout relative_home;
+    RelativeLayout relative_home, relative_no_data;
     ArrayList<FlickerImageModel> flickerImage = new ArrayList<>();
     String objSearchText = "flower";
     private Integer current_page = 1;
@@ -93,6 +93,7 @@ public class HomeActivity extends AppCompatActivity implements ResponseListener,
     private void initViews() {
 
         relative_home = findViewById(R.id.relative_home);
+        relative_no_data = findViewById(R.id.relative_no_data);
         recyclerView = (RecyclerView) findViewById(R.id.card_recycler_view);
         recyclerView.setHasFixedSize(true);
         RecyclerView.LayoutManager layoutManager = new GridLayoutManager(getApplicationContext(), 3);
@@ -101,6 +102,7 @@ public class HomeActivity extends AppCompatActivity implements ResponseListener,
         recyclerView.setAdapter(adapter);
 
         relative_home.setVisibility(View.VISIBLE);
+        relative_no_data.setVisibility(View.GONE);
 
         adapter.setOnLoadMoreListener(new OnLoadMoreListener() {
             @Override
@@ -127,14 +129,31 @@ public class HomeActivity extends AppCompatActivity implements ResponseListener,
             }
         });
 
+        relative_no_data.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                initnetworkcall();
+            }
+        });
+
         initnetworkcall();
 
     }
 
     private void initnetworkcall() {
+        Common common = new Common(getApplicationContext());
+        if (!common.isNetworkConnected()) {
+            if (flickerImage.size() <= 0) {
+                relative_no_data.setVisibility(View.VISIBLE);
+            }
+            relative_home.setVisibility(View.GONE);
+            Snackbar.make(findViewById(R.id.home_coordinatelayout), "Please check internet setting", Snackbar.LENGTH_LONG)
+                    .setAction("Action", null).show();
+            removeLoader();
+            return;
+        }
         isOnline = true;
-        new ServiceHandler(this).execute(Common.getBaseUrl(current_page, objSearchText), Common.METHOD_GET);
-
+        new ServiceHandler(this).execute(Common.getBaseUrl(current_page, objSearchText), Common.METHOD_POST);
     }
 
     private void prepareData(String result) {
@@ -186,14 +205,20 @@ public class HomeActivity extends AppCompatActivity implements ResponseListener,
             }
 
             if (flickerImage.size() <= 0) {
-
+                relative_no_data.setVisibility(View.VISIBLE);
                 Snackbar.make(findViewById(R.id.home_coordinatelayout), "No data available", Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();
+            } else {
+                relative_no_data.setVisibility(View.GONE);
             }
 
         } catch (JSONException e) {
             e.printStackTrace();
             relative_home.setVisibility(View.GONE);
+
+            if (flickerImage.size() <= 0) {
+                relative_no_data.setVisibility(View.VISIBLE);
+            }
             Snackbar.make(findViewById(R.id.home_coordinatelayout), "Exception occured", Snackbar.LENGTH_LONG)
                     .setAction("Action", null).show();
         }
@@ -204,8 +229,6 @@ public class HomeActivity extends AppCompatActivity implements ResponseListener,
     public void OnSuccessResponseListener(int responseCode, String response) {
         isOnline = false;
         removeLoader();
-
-        Log.e("success", "response: " + response);
         prepareData(response);
     }
 
@@ -216,6 +239,9 @@ public class HomeActivity extends AppCompatActivity implements ResponseListener,
         isOnline = false;
         removeLoader();
 
+        if (flickerImage.size() <= 0) {
+            relative_no_data.setVisibility(View.VISIBLE);
+        }
         relative_home.setVisibility(View.GONE);
         Snackbar.make(findViewById(R.id.home_coordinatelayout), "Failure: " + responseCode, Snackbar.LENGTH_LONG)
                 .setAction("Action", null).show();
@@ -232,7 +258,6 @@ public class HomeActivity extends AppCompatActivity implements ResponseListener,
 
     @Override
     public void OnSearchComplete(String searchText) {
-        Log.e("searchText", "searchText: " + searchText);
         objSearchText = searchText;
         reset();
     }

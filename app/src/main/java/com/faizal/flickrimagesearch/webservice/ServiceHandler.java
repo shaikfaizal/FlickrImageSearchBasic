@@ -8,8 +8,9 @@ import com.faizal.flickrimagesearch.listeners.ResponseListener;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
 import java.net.URL;
+
+import javax.net.ssl.HttpsURLConnection;
 
 //public class ServiceHandler {
 public class ServiceHandler extends AsyncTask<String, Void, String> {
@@ -34,18 +35,26 @@ public class ServiceHandler extends AsyncTask<String, Void, String> {
             //Create a URL object holding our url
             URL myUrl = new URL(stringUrl);
             //Create a connection
-            HttpURLConnection connection = (HttpURLConnection)
+            HttpsURLConnection connection = (HttpsURLConnection)
                     myUrl.openConnection();
             //Set methods and timeouts
             connection.setRequestMethod(REQUEST_METHOD);
             connection.setReadTimeout(READ_TIMEOUT);
             connection.setConnectTimeout(CONNECTION_TIMEOUT);
+//            connection.setRequestProperty("Content-type", "application/json");
 
             //Connect to our url
             connection.connect();
-            //Create a new InputStreamReader
-            InputStreamReader streamReader = new
-                    InputStreamReader(connection.getInputStream());
+            int status = connection.getResponseCode();
+            InputStreamReader streamReader = null;
+            if (status < 400) {
+
+                //Create a new InputStreamReader
+                streamReader = new
+                        InputStreamReader(connection.getInputStream());
+            } else {
+                streamReader = new InputStreamReader(connection.getErrorStream());
+            }
             //Create a new buffered reader and String Builder
             BufferedReader reader = new BufferedReader(streamReader);
             StringBuilder stringBuilder = new StringBuilder();
@@ -58,10 +67,14 @@ public class ServiceHandler extends AsyncTask<String, Void, String> {
             streamReader.close();
             //Set our result equal to our stringBuilder
             result = stringBuilder.toString();
+
             status_code = connection.getResponseCode();
 
-//            Log.e("result", "Response : " + result);
+            connection.disconnect();
         } catch (IOException e) {
+            e.printStackTrace();
+            result = null;
+        } catch (Exception e) {
             e.printStackTrace();
             result = null;
         }
