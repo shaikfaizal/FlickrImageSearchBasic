@@ -117,7 +117,8 @@ public class HomeActivity extends AppCompatActivity implements ResponseListener,
                         if (flickerImage != null && flickerImage.size() >= 10) {
                             flickerImage.add(null);
                             adapter.updateDataSet(flickerImage);
-                            adapter.notifyDataSetChanged();
+//                            adapter.notifyDataSetChanged();
+                            adapter.notifyItemInserted(flickerImage.size() + 1);
 
                             current_page += 1;
                             initnetworkcall();
@@ -140,6 +141,8 @@ public class HomeActivity extends AppCompatActivity implements ResponseListener,
 
     }
 
+    ServiceHandler serviceHandler = null;
+
     private void initnetworkcall() {
         Common common = new Common(getApplicationContext());
         if (!common.isNetworkConnected()) {
@@ -153,7 +156,8 @@ public class HomeActivity extends AppCompatActivity implements ResponseListener,
             return;
         }
         isOnline = true;
-        new ServiceHandler(this).execute(Common.getBaseUrl(current_page, objSearchText), Common.METHOD_POST);
+        serviceHandler = new ServiceHandler(this);
+        serviceHandler.execute(Common.getBaseUrl(current_page, objSearchText), Common.METHOD_POST);
     }
 
     private void prepareData(String result) {
@@ -164,6 +168,8 @@ public class HomeActivity extends AppCompatActivity implements ResponseListener,
                 JSONObject obj_photos = root.getJSONObject("photos");    //which contains basic data
 
                 String total_img = obj_photos.getString("total");
+
+                ArrayList<FlickerImageModel> objTmpFlickr = new ArrayList<>();
 
                 if (obj_photos.has("photo")) {
                     JSONArray array_photo = obj_photos.getJSONArray("photo"); // contains photo with details
@@ -190,13 +196,17 @@ public class HomeActivity extends AppCompatActivity implements ResponseListener,
                                 imageModel.getSecret())
                         );
 
-                        flickerImage.add(imageModel);
+                        objTmpFlickr.add(imageModel);
                     }
                 }
 
+                flickerImage.addAll(objTmpFlickr);
+
                 relative_home.setVisibility(View.GONE);
                 adapter.updateDataSet(flickerImage);
-                adapter.notifyDataSetChanged();
+//                adapter.notifyDataSetChanged();
+                adapter.notifyItemRangeInserted(flickerImage.size() + 1, objTmpFlickr.size());
+
 
                 Snackbar.make(findViewById(R.id.home_coordinatelayout),
                         objSearchText + " : " + flickerImage.size() + " / " + total_img,
@@ -259,6 +269,16 @@ public class HomeActivity extends AppCompatActivity implements ResponseListener,
     @Override
     public void OnSearchComplete(String searchText) {
         objSearchText = searchText;
+
+        try {
+            if (serviceHandler != null) {
+                Log.e("serviceHandler", "cancel");
+                serviceHandler.cancel(true);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         reset();
     }
 
@@ -266,6 +286,8 @@ public class HomeActivity extends AppCompatActivity implements ResponseListener,
         relative_home.setVisibility(View.VISIBLE);
         current_page = 1;
         flickerImage = new ArrayList<>();
+        adapter.updateDataSet(flickerImage);
+        adapter.notifyDataSetChanged();
         initnetworkcall();
     }
 }
