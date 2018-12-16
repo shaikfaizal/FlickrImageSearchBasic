@@ -83,9 +83,15 @@ public class ServiceHandler extends AsyncTask<String, Void, String> {
 
     protected void onPostExecute(String result) {
         super.onPostExecute(result);
-        if (status_code == 200 && result != null)
-            mResponseListener.OnSuccessResponseListener(status_code, result);
-        else
-            mResponseListener.OnErrorResponseListener(status_code, result);
+
+        try {
+            if (status_code == 200 && result != null)
+                mResponseListener.OnSuccessResponseListener(status_code, result);
+            else
+                mResponseListener.OnErrorResponseListener(status_code, result);
+        } catch (Exception e) {
+            e.printStackTrace();
+            mResponseListener.OnErrorResponseListener(404, "Error in response");
+        }
     }
 }
