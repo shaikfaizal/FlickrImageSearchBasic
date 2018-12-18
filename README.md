@@ -8,9 +8,8 @@ Using Flickr api search image
 
 By using fab button we can search different images like kitten, ball, etc.,
 
-After getting data from the server just load into the recycler view and cache using LRU
+After getting data from the server just load into the recycler view and do cache using filecache
 
-# LRUCache
+# FileCache
 
-Currently i allocated 4MB cache to the LRU and runnung it
-Once 4MB is filled, they will delete old cache and added new images.
+Storing images into the local cache directory.
